@@ -7,11 +7,13 @@ import { newCourse } from ".././../../tools/mockData";
 import CourseForm from "./CourseForm"
 import Spinner from "../common/Spinner"
 import { toast } from "react-toastify"
-
+import useUnsavedChanges from "../common/useUnsavedChanges"
 export function ManageCoursePage({ courses, authors, loadAuthors, loadCourses, saveCourse, history, ...props }) {
     const [course, setCourse] = useState({ ...props.course });
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
+    const [routerPrompt, setDirty, setPristine] = useUnsavedChanges()
+
 
     useEffect(() => {
 
@@ -35,8 +37,8 @@ export function ManageCoursePage({ courses, authors, loadAuthors, loadCourses, s
         setCourse(prevCourse => ({
             ...prevCourse,
             [name]: name === "authorId" ? parseInt(value, 10) : value
-
         }))
+        setDirty()
         console.log('name :>> ', name);
         console.log('value :>> ', value);
     }
@@ -56,7 +58,9 @@ export function ManageCoursePage({ courses, authors, loadAuthors, loadCourses, s
         if (!formIsValid(course)) {
             return;
         }
+        setPristine();
         setSaving(true);
+
         saveCourse(course).then(() => {
             toast.success("Course saved.")
             history.push("/courses");
@@ -67,12 +71,15 @@ export function ManageCoursePage({ courses, authors, loadAuthors, loadCourses, s
     }
 
     return (
-        <Fragment>
-            {courses.length > 0 || authors.length > 0 || course.length > 0
-                ? (<CourseForm errors={errors} course={course} authors={authors} onChange={handleChange}
-                    onSave={handleSave} saving={saving} />)
-                : <Spinner />}
-        </Fragment>
+
+        courses.length > 0 || authors.length > 0 || course.length > 0
+            ? (<Fragment>
+                <CourseForm errors={errors} course={course} authors={authors} onChange={handleChange}
+                    onSave={handleSave} saving={saving} />
+                {routerPrompt}
+            </Fragment>)
+            : <Spinner />
+
     )
 
 }
