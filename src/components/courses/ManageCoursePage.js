@@ -39,15 +39,15 @@ export function ManageCoursePage({ courses, authors, loadAuthors, loadCourses, s
             [name]: name === "authorId" ? parseInt(value, 10) : value
         }))
         setDirty()
-        console.log('name :>> ', name);
-        console.log('value :>> ', value);
+        // console.log('name :>> ', name);
+        // console.log('value :>> ', value);
     }
 
     function formIsValid(course) {
         const errors = {}
 
         if (!course.title) errors.title = "Title is required"
-        if (!course.author) errors.author = "Author is required"
+        if (!course.authorId) errors.author = "Author is required"
         if (!course.category) errors.category = "category is required"
         setErrors(errors)
         return Object.keys(errors).length === 0

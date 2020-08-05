@@ -5,7 +5,8 @@ import { bindActionCreators } from 'redux'
 import { Redirect } from 'react-router-dom'
 import * as courseActions from '../../redux/actions/courseActions'
 import * as authorActions from "../../redux/actions/authorActions"
-import Pagination from "../Pagination/PaginationTraversy"
+import PaginationTraversy from "../Pagination/PaginationTraversy"
+import PaginationTC from "../Pagination/PaginationToofaniCoder"
 import CourseList from "./CourseList"
 import Spinner from "../common/Spinner"
 import { toast } from "react-toastify"
@@ -103,7 +104,8 @@ class CoursesPage extends React.Component {
 
                         <div>
                             <CourseList onClickDelete={this.handleDelete} courses={currentCourses} />
-                            {/* < Pagination coursesPerPage={this.state.coursesPerPage} totalCourses={this.props.courses.length}
+                            <PaginationTC coursesPerPage={coursesPerPage} totalCourses={courses.length} counter={currentPage} paginate={this.paginate} />
+                            {/* < PaginationTraversy coursesPerPage={this.state.coursesPerPage} totalCourses={this.props.courses.length}
                                 paginate={this.paginate} /> */}
                         </div>
 
