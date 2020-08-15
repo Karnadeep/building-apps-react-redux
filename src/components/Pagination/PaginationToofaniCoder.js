@@ -1,24 +1,35 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import PropTypes from 'prop-types'
 
-const PaginationToofaniCoder = ({ coursesPerPage, totalCourses, counter, paginate }) => {
-    const [numberOfPages, setNumberOfPages] = useState(Math.ceil(totalCourses / coursesPerPage))
-    console.log('numberOfPages :>> ', numberOfPages);
+
+const PaginationToofaniCoder = ({ showPerPage, totalCourses, onPaginationChange }) => {
+    //  console.log('numberOfPages :>> ', numberOfPages);
+
+    const [counter, setCounter] = useState(1)
+    const [numberOfButtons, setNumberOfButtons] = useState(Math.ceil(totalCourses / showPerPage))
+    useEffect(() => {
+        const value = showPerPage * counter
+        const startValue = value - showPerPage
+        const endValue = value
+        onPaginationChange(startValue, endValue)
+        setNumberOfButtons(Math.ceil(totalCourses / showPerPage))
+    }, [counter, totalCourses])
 
     const onButtonClick = (type) => {
         if (type === "prev") {
             if (counter === 1) {
-                paginate(1)
+                setCounter(1)
             }
             else {
-                paginate(counter - 1)
+                setCounter(counter - 1)
             }
         }
         else if (type === "next") {
-            if (counter == numberOfPages) {
-                paginate(counter)
+            if (counter == numberOfButtons) {
+                setCounter(counter)
             }
             else {
-                paginate(counter + 1)
+                setCounter(counter + 1)
             }
         }
     }
@@ -29,9 +40,9 @@ const PaginationToofaniCoder = ({ coursesPerPage, totalCourses, counter, paginat
                     <li className="page-item"><a className="page-link"
                         onClick={() => onButtonClick("prev")}
                     >Previous</a></li>
-                    {new Array(numberOfPages).fill("").map((ele, index) => (
+                    {new Array(numberOfButtons).fill("").map((ele, index) => (
                         <li key={index} className={`page-item ${index + 1 === counter ? "active" : null}`}><a className="page-link"
-                            onClick={() => paginate(index + 1)}>
+                            onClick={() => setCounter(index + 1)}>
                             {index + 1}</a>
                         </li>
                     ))}
@@ -44,6 +55,13 @@ const PaginationToofaniCoder = ({ coursesPerPage, totalCourses, counter, paginat
         </div>
 
     )
+}
+
+PaginationToofaniCoder.propTypes = {
+    showPerPage: PropTypes.number.isRequired,
+    totalCourses: PropTypes.number.isRequired,
+    onPaginationChange: PropTypes.func.isRequired,
+
 }
 
 export default PaginationToofaniCoder

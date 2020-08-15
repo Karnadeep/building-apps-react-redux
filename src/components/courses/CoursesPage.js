@@ -11,29 +11,122 @@ import CourseList from "./CourseList"
 import Spinner from "../common/Spinner"
 import { toast } from "react-toastify"
 
-
 class CoursesPage extends React.Component {
+
     state = {
         currentPage: 1,
         coursesPerPage: 3,
-        setRedirecttoPage: false
+        setRedirecttoPage: false,
+        courseList: this.props.courses,
+        courseFields: "",
+        authorName: "",
+        category: "",
+        pageStart: 0,
+        pageEnd: 3
     }
 
     componentDidMount() {
         const { courses, authors, actions } = this.props;
-        if (courses.length == 0) {
-            actions.loadCourses().catch(err => {
-                alert("Error Occured" + err.message);
-            });
-        }
         if (authors.length == 0) {
             actions.loadAuthors().catch(err =>
                 alert("Authors Not Loaded" + err.message));
+        }
+        if (courses.length == 0) {
+            actions.loadCourses().then(() => {
+                this.setState({
+                    courseList: this.props.courses
+                })
+            })
+                .catch(err => {
+                    alert("Error Occured" + err.message);
+                });
+
+        } else {
+            this.setState({
+                ...this.state,
+                courseList: this.props.courses,
+            })
+        }
+
+    }
+
+    compareByTitle = (a, b) => {
+
+        const variantA = a.title.toUpperCase()
+        const variantB = b.title.toUpperCase()
+
+        let comparison = 0
+        if (variantA > variantB) {
+            comparison = 1
+        } else if (variantA < variantB) {
+            comparison = -1
+        }
+        return comparison
+
+    }
+
+    compareByAuthName = (a, b) => {
+
+        const variantA = a.authorName.toUpperCase().trim()
+        const variantB = b.authorName.toUpperCase().trim()
+
+        let comparison = 0
+        if (variantA > variantB) {
+            comparison = 1
+        } else if (variantA < variantB) {
+            comparison = -1
+        }
+        return comparison
+
+    }
+
+    compareByCategory = (a, b) => {
+
+        const variantA = a.category.toUpperCase()
+        const variantB = b.category.toUpperCase()
+
+        let comparison = 0
+        if (variantA > variantB) {
+            comparison = 1
+        } else if (variantA < variantB) {
+            comparison = -1
+        }
+        return comparison
+
+    }
+    handleSortChange = (event) => {
+        let { courses } = this.props
+        if (event.target.value === "title") {
+
+            courses.sort(this.compareByTitle)
+
+            this.setState({
+                ...this.state,
+                courseFields: "title",
+                courseList: courses
+            })
 
 
         }
+        if (event.target.value === "authorName") {
+            courses.sort(this.compareByAuthName)
+            this.setState({
+                ...this.state,
+                courseFields: "authorName",
+                courseList: courses
+            })
 
 
+        }
+        if (event.target.value === "category") {
+            courses.sort(this.compareByCategory)
+            this.setState({
+                ...this.state,
+                courseFields: "category",
+                courseList: courses
+            })
+
+        }
     }
 
     // state = {
@@ -59,7 +152,11 @@ class CoursesPage extends React.Component {
     handleDelete = async course => {
         toast.success("Course Deleted.")
         try {
-            this.props.actions.deleteCourse(course)
+            await this.props.actions.deleteCourse(course)
+            this.setState({
+                ...this.state,
+                courseList: this.props.courses
+            })
         }
 
         catch (error) {
@@ -67,24 +164,60 @@ class CoursesPage extends React.Component {
         }
     };
 
-    paginate = async (currentPageNumber) => {
+    //traversy paginate method
+    paginate = (currentPageNumber) => {
+
         this.setState({
             currentPage: currentPageNumber
         })
     }
 
+    //Toofanicoder pagination method
+    onPaginationChange = (startValue, endValue) => {
+        // console.log('startvalue,endValue  :>> ', startValue, endValue);
+        this.setState({
+            ...this.state,
+            pageStart: startValue,
+            pageEnd: endValue
+        })
+        // setPagination({
+        //   start: startValue,
+        //   end: endValue
+        // })
+    }
+
+    handleAuthorChange = (event) => {
+        let { courses } = this.props
+        this.setState({
+            ...this.state,
+            authorName: event.target.value,
+            courseList: courses.filter(course => course.authorName === event.target.value)
+        })
+    }
+
+    handleCategoryChange = event => {
+        const { courses } = this.props
+        this.setState({
+            ...this.state,
+            category: event.target.value,
+            courseList: courses.filter(course => course.category === event.target.value)
+        })
+    }
+
     render() {
+        const { courses, authors } = this.props
+        let categories = [...new Set(courses.map(course => course.category))] // Get unique categories from courses array
         //get current courses : brad traversy
         const { currentPage, coursesPerPage } = this.state
-        const { courses } = this.props
         const indexOfLastCOURSE = currentPage * coursesPerPage
         const indexOdFirstCourse = indexOfLastCOURSE - coursesPerPage
-        const currentCourses = courses.slice(indexOdFirstCourse, indexOfLastCOURSE)
+        const currentCourses = this.state.courseList.slice(indexOdFirstCourse, indexOfLastCOURSE)
+        const slicedCourses = this.state.courseList.slice(this.state.pageStart, this.state.pageEnd)
         return (
             <>
                 {this.props.loading ? <Spinner /> : (
                     <Fragment>
-                        {this.state.setRedirecttoPage && <Redirect to="/course" />}
+                        {this.state.setRedirecttoPage && <Redirect to="/course/" />}
                         {/* <form onSubmit={this.handleSubmit}> */}
                         <h2>Courses</h2>
                         {/* <h3>Add course</h3>
@@ -101,11 +234,16 @@ class CoursesPage extends React.Component {
                             onClick={() => this.setState({ setRedirecttoPage: true })}>
                             Add Course
                 </button>
-
                         <div>
-                            <CourseList onClickDelete={this.handleDelete} courses={currentCourses} />
-                            <PaginationTC coursesPerPage={coursesPerPage} totalCourses={courses.length} counter={currentPage} paginate={this.paginate} />
-                            {/* < PaginationTraversy coursesPerPage={this.state.coursesPerPage} totalCourses={this.props.courses.length}
+
+                            <CourseList onClickDelete={this.handleDelete} currentCourses={slicedCourses} authors={authors}
+                                courseFields={this.state.courseFields} sortCourses={this.handleSortChange}
+                                categories={categories} authorName={this.state.authorName} onChangeAuthor={this.handleAuthorChange}
+                                category={this.state.category} onChangeCategory={this.handleCategoryChange}
+                            />
+                            <PaginationTC showPerPage={this.state.coursesPerPage} totalCourses={this.state.courseList.length}
+                                counter={this.state.currentPage} onPaginationChange={this.onPaginationChange} />
+                            {/* < PaginationTraversy coursesPerPage={this.state.coursesPerPage} totalCourses={this.state.courseList.length}
                                 paginate={this.paginate} /> */}
                         </div>
 
@@ -125,15 +263,31 @@ CoursesPage.propTypes = {
     loading: PropTypes.bool.isRequired,
 }
 
+
 function mapStateToProps(state) {
-    return {
-        authors: state.authors,
-        courses: state.authors.length == 0 ? [] : state.courses.map(course => {
+    let courses = state.courses
+    const authors = state.authors
+    // console.log('authors :>> ', authors);
+    // console.log('courses :>> ', courses);
+    if (authors.length > 0 && courses.length > 0) {
+        courses = state.courses.map(course => {
             return {
                 ...course,
-                authorName: state.authors.find(a => a.id === course.authorId).name
+                authorName: authors.find(a => a.id === course.authorId).name
             }
-        }),
+        })
+    }
+
+
+    return {
+        authors,
+        // courses: state.authors.length == 0 ? [] : state.courses.map(course => {
+        //     return {
+        //         ...course,
+        //         authorName: state.authors.find(a => a.id === course.authorId).name
+        //     }
+        // }),
+        courses,
         loading: state.apiCallsInProgress > 0
     }
 }
