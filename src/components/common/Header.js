@@ -19,7 +19,9 @@ const Header = ({ courses, loadCourses }) => {
         <nav>
             <NavLink to="/" activeStyle={activeStyle} exact>Home</NavLink>{" | "}
             <NavLink to="/courses" activeStyle={activeStyle}>Courses #{courses.length}</NavLink>{" | "}
+            <NavLink to="/authors" activeStyle={activeStyle}>Authors</NavLink>{" | "}
             <NavLink to="/about" activeStyle={activeStyle} >About</NavLink>
+
         </nav>
     )
 }

@@ -24,16 +24,31 @@ export function deleteCourseOptimistic(course) {
         type: types.DELETE_COURSE_OPTIMISTIC, course
     }
 }
-export function courseFormEntered() {
+
+export function createCourseHistorySuccess(savedCourseHist) {
     return {
-        type: types.COURSE_FORM_ENTERED
+        type: types.CREATE_COURSEHISTORY_SUCCESS, savedCourseHist
     }
 }
-export function saveBtnClicked() {
+
+export function updateCourseHistorySuccess(savedCourseHist) {
     return {
-        type: types.SAVE_BUTTON_CLICKED
+        type: types.UPDATE_COURSEHISTORY_SUCCESS, savedCourseHist
     }
 }
+
+export function loadCoursesHistorySuccess(coursesHistory) {
+    return {
+        type: types.LOAD_COURSESHISTORY_SUCCESS, coursesHistory
+    }
+}
+
+export function deleteCourseHistoryOptimistic(courseHistoryId) {
+    return {
+        type: types.DELETE_COURSEHISTORY_OPTIMISTIC, courseHistoryId
+    }
+}
+
 export function loadCourses() {
 
     return function (dispatch) {
@@ -56,7 +71,8 @@ export function saveCourse(course) {
             .then(savedCourse => {
                 //             dispatch(saveBtnClicked())
                 course.id
-                    ? dispatch(updateCourseSuccess(savedCourse))
+                    ?
+                    dispatch(updateCourseSuccess(savedCourse))
                     : dispatch(createCourseSuccess(savedCourse));
             })
             .catch(error => {
@@ -66,6 +82,26 @@ export function saveCourse(course) {
     };
 }
 
+export function saveCourseHistory(courseHistory) {
+    return function (dispatch) {
+        dispatch(beginApiCall());
+        return courseApi.saveCourseHistory(courseHistory)
+            .then(savedCourseHist => {
+                console.log('savedCourseHist :>> ', savedCourseHist);
+                console.log('courseHistory.id :>> ', courseHistory.id);
+                courseHistory.id ?
+                    dispatch(updateCourseHistorySuccess(savedCourseHist))
+                    :
+                    dispatch(createCourseHistorySuccess(savedCourseHist))
+
+            })
+            .catch(error => {
+                dispatch(apiCallError())
+                throw error
+            })
+    }
+}
+
 export function deleteCourse(course) {
     return function (dispatch) {
         dispatch(deleteCourseOptimistic(course))
@@ -73,8 +109,27 @@ export function deleteCourse(course) {
     }
 }
 
-export function fillForm() {
+
+
+export function loadCoursesHistory() {
     return function (dispatch) {
-        dispatch(courseFormEntered())
+        dispatch(beginApiCall());
+        return courseApi.getCoursesHistory().then(coursesHistory => {
+            dispatch(loadCoursesHistorySuccess(coursesHistory))
+        })
+            .catch(error => {
+                dispatch(apiCallError())
+                throw error
+            })
     }
+}
+
+export function deleteCourseHistory(courseHistoryId) {
+
+    return function (dispatch) {
+        dispatch(deleteCourseHistoryOptimistic(courseHistoryId))
+
+        return courseApi.deleteCourseHistory(courseHistoryId)
+    }
+
 }

@@ -2,7 +2,7 @@ import React, { Fragment } from 'react'
 import PropTypes from 'prop-types'
 import { Link } from 'react-router-dom'
 
-const CourseList = ({ currentCourses, onClickDelete, authors, courseFields, sortCourses,
+const CourseList = ({ currentCourses, onClickDelete, authors, history, onClickUndo, courseFields, sortCourses,
     categories, authorName, onChangeAuthor, category, onChangeCategory }) => {
     return (
         <Fragment>
@@ -52,35 +52,54 @@ const CourseList = ({ currentCourses, onClickDelete, authors, courseFields, sort
                             <th>Title</th>
                             <th>Author</th>
                             <th>Category</th>
+                            <th>Reverse Changes</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
-                        {currentCourses.map(course => (
-                            <tr key={course.id}>
-                                <td>
-                                    <a className="btn btn-light"
-                                        href={"http://pluralsight.com/courses/" + course.slug}
-                                    >
-                                        Watch
-                            </a>
-                                </td>
-                                <td>
-                                    <Link to={"/course/" + course.slug}>
-                                        {course.title}
-                                    </Link>
-                                </td>
-                                <td>
-                                    {course.authorName}
-                                </td>
-                                <td>{course.category}</td>
-                                <td>
-                                    <button onClick={() => onClickDelete(course)} className="btn btn-outline-danger">
-                                        Delete
-                            </button>
-                                </td>
-                            </tr>
-                        ))}
+                        {currentCourses.map(course => {
+                            const courseHistory = history.find(hist =>
+                                hist.course.id === course.id)
+                            return (
+                                <tr key={course.id}>
+                                    <td>
+                                        <a className="btn btn-light"
+                                            href={"http://pluralsight.com/courses/" + course.slug}
+                                        >
+                                            Watch
+                                    </a>
+                                    </td>
+                                    <td>
+                                        <Link to={"/course/" + course.slug}>
+                                            {course.title}
+                                        </Link>
+                                    </td>
+                                    <td>
+                                        {course.authorName}
+                                    </td>
+                                    <td>{course.category}</td>
+                                    <td>
+                                        {courseHistory ? (
+                                            <button
+                                                onClick={() => onClickUndo(courseHistory)}
+
+                                                className="btn btn-light">
+                                                Undo Changes
+                                            </button>
+                                        )
+                                            : (<label className="btn text-white bg-dark">Not Changed</label>)
+                                        }
+
+                                    </td>
+                                    <td>
+                                        <button onClick={() => onClickDelete(course)} className="btn btn-outline-danger">
+                                            Delete
+                                    </button>
+                                    </td>
+                                </tr>
+                            )
+                        }
+                        )}
 
                     </tbody>
                 </table>
@@ -95,6 +114,8 @@ CourseList.propTypes = {
     currentCourses: PropTypes.array.isRequired,
     courseFields: PropTypes.string.isRequired,
     authors: PropTypes.array.isRequired,
+    history: PropTypes.array.isRequired,
+    onClickUndo: PropTypes.func.isRequired,
     sortCourses: PropTypes.func.isRequired,
     categories: PropTypes.array.isRequired,
     onChangeAuthor: PropTypes.func.isRequired,

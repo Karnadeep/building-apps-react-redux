@@ -10,6 +10,7 @@ import PaginationTC from "../Pagination/PaginationToofaniCoder"
 import CourseList from "./CourseList"
 import Spinner from "../common/Spinner"
 import { toast } from "react-toastify"
+import { authors } from '../../../tools/mockData'
 
 class CoursesPage extends React.Component {
 
@@ -26,7 +27,7 @@ class CoursesPage extends React.Component {
     }
 
     componentDidMount() {
-        const { courses, authors, actions } = this.props;
+        const { courses, authors, actions, history } = this.props;
         if (authors.length == 0) {
             actions.loadAuthors().catch(err =>
                 alert("Authors Not Loaded" + err.message));
@@ -46,6 +47,10 @@ class CoursesPage extends React.Component {
                 ...this.state,
                 courseList: this.props.courses,
             })
+        }
+        if (history.length == 0) {
+            actions.loadCoursesHistory()
+                .catch(error => alert("CoursesHistory not loaded " + error.message))
         }
 
     }
@@ -203,7 +208,25 @@ class CoursesPage extends React.Component {
             courseList: courses.filter(course => course.category === event.target.value)
         })
     }
-
+    handleUndoChange = async (courseHistory) => {
+        const { history, actions } = this.props
+        const historyAuthor = authors.find(author => author.id === courseHistory.course.authorId)
+        if (window.confirm(`Click OK to revert the course details back to
+        title : ${courseHistory.course.title}
+        author : ${historyAuthor.name}
+        category : ${courseHistory.course.category}
+        `)) {
+            try {
+                await actions.saveCourse(courseHistory.course)
+                toast.success("Course Changes reverted")
+                await actions.deleteCourseHistory(courseHistory.id);
+                toast.success("Course History deleted")
+            } catch (error) {
+                alert("Error" + error.message)
+            }
+            //console.log('history :>> ', history);
+        }
+    }
     render() {
         const { courses, authors } = this.props
         let categories = [...new Set(courses.map(course => course.category))] // Get unique categories from courses array
@@ -237,7 +260,7 @@ class CoursesPage extends React.Component {
                         <div>
 
                             <CourseList onClickDelete={this.handleDelete} currentCourses={slicedCourses} authors={authors}
-                                courseFields={this.state.courseFields} sortCourses={this.handleSortChange}
+                                history={this.props.history} onClickUndo={this.handleUndoChange} courseFields={this.state.courseFields} sortCourses={this.handleSortChange}
                                 categories={categories} authorName={this.state.authorName} onChangeAuthor={this.handleAuthorChange}
                                 category={this.state.category} onChangeCategory={this.handleCategoryChange}
                             />
@@ -261,6 +284,7 @@ CoursesPage.propTypes = {
     courses: PropTypes.array.isRequired,
     authors: PropTypes.array.isRequired,
     loading: PropTypes.bool.isRequired,
+    history: PropTypes.array.isRequired,
 }
 
 
@@ -288,6 +312,7 @@ function mapStateToProps(state) {
         //     }
         // }),
         courses,
+        history: state.history,
         loading: state.apiCallsInProgress > 0
     }
 }
@@ -297,7 +322,10 @@ function mapDispatchToProps(dispatch) {
         actions: {
             loadCourses: bindActionCreators(courseActions.loadCourses, dispatch),
             loadAuthors: bindActionCreators(authorActions.loadAuthors, dispatch),
-            deleteCourse: bindActionCreators(courseActions.deleteCourse, dispatch)
+            deleteCourse: bindActionCreators(courseActions.deleteCourse, dispatch),
+            loadCoursesHistory: bindActionCreators(courseActions.loadCoursesHistory, dispatch),
+            saveCourse: bindActionCreators(courseActions.saveCourse, dispatch),
+            deleteCourseHistory: bindActionCreators(courseActions.deleteCourseHistory, dispatch)
         }
 
     }

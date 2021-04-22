@@ -1,5 +1,6 @@
 import { handleResponse, handleError } from "./apiUtils";
 const baseUrl = process.env.API_URL + "/courses/";
+const baseUrlHistory = process.env.API_URL + "/history/"
 
 export function getCourses() {
   return fetch(baseUrl)
@@ -21,4 +22,27 @@ export function deleteCourse(courseId) {
   return fetch(baseUrl + courseId, { method: "DELETE" })
     .then(handleResponse)
     .catch(handleError);
+}
+
+export function getCoursesHistory() {
+  return fetch(baseUrlHistory)
+    .then(handleResponse)
+    .catch(handleError);
+}
+
+export function saveCourseHistory(courseHistory) {
+  return fetch(baseUrlHistory + (courseHistory.id || ""), {
+    method: courseHistory.id ? "PUT" : "POST", // POST for create, PUT to update when id already exists.
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(courseHistory)
+  })
+    .then(handleResponse)
+    .catch(handleError)
+}
+
+export function deleteCourseHistory(courseHistId) {
+  return fetch(baseUrlHistory + courseHistId,
+    { method: "DELETE" })
+    .then(handleResponse)
+    .catch(handleError)
 }

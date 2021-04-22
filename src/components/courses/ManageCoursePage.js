@@ -1,27 +1,47 @@
 import React, { useEffect, useState, Fragment } from "react";
 import { connect } from "react-redux";
 import PropTypes from 'prop-types'
-import { loadCourses, saveCourse } from "../../redux/actions/courseActions"
+import { loadCourses, saveCourse, loadCoursesHistory, saveCourseHistory } from "../../redux/actions/courseActions"
 import { loadAuthors } from "../../redux/actions/authorActions"
-import { newCourse, courses } from ".././../../tools/mockData";
+import { newCourse } from ".././../../tools/mockData";
 import CourseForm from "./CourseForm"
 import Spinner from "../common/Spinner"
 import CourseNotFound from "../error404/CourseNotFound"
 import { toast } from "react-toastify"
 import useUnsavedChanges from "../common/useUnsavedChanges"
-export function ManageCoursePage({ courses, authors, loadAuthors, loadCourses, saveCourse, history, course }) {
+export function ManageCoursePage({ courses, authors, loadAuthors, loadCourses, saveCourse, loadCoursesHistory, saveCourseHistory, history, course, courseHistory, courseBackup }) {
 
     //  console.log('course :>> ', course);
-    const [courseForForm, setCourse] =
-        useState(course);
-    // console.log('use State course :>> ', courseForForm);
+    const [courseForForm, setCourse] = useState(course);
+    //console.log('courseHistory in useState:>> ', courseHistory);
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
+    const [courseChange, setCourseChange] = useState({})
     const [routerPrompt, setDirty, setPristine] = useUnsavedChanges()
 
 
     useEffect(() => {
-
+        if (courseHistory.length == 0) {
+            loadCoursesHistory().catch(error => alert("history not loaded " + error.message));
+        } else {
+            if (courseBackup) {
+                let hist = []
+                let sample = {}
+                hist = courseHistory.filter(hist => hist.course.id === courseBackup.id)
+                if (hist.length > 0) {
+                    sample = {
+                        id: hist[0].id,
+                        course: courseBackup
+                    }
+                } if (hist.length == 0) {
+                    sample = {
+                        id: null,
+                        course: courseBackup
+                    }
+                }
+                setCourseChange(sample)
+            }
+        }
         if (courses.length == 0) {
             loadCourses().catch(error => {
                 alert("Courses Not Loaded " + error.message)
@@ -29,29 +49,26 @@ export function ManageCoursePage({ courses, authors, loadAuthors, loadCourses, s
         }
         else {
             setCourse(course)
-
-
-            //       console.log('use Effect course :>> ', course);
         }
         if (authors.length == 0) {
             loadAuthors().catch(error => {
                 alert("Authors Not Loaded " + error.message)
             });
         }
-    }, [course]);
+
+    }, [course, courseHistory]);
 
     function handleChange(event) {
         const { name, value } = event.target;
-        console.log('name :>> ', name);
-        console.log('value :>> ', value);
+
         setCourse(prevCourse => ({
             ...prevCourse,
             [name]: name === "authorId" ? parseInt(value, 10) : value
         }))
+        //  setAuthorForm({ ...authorForm, [event.target.name]: event.target.value })
         setDirty()
-        // console.log('name :>> ', name);
-        // console.log('value :>> ', value);
     }
+
     function containSpecialChar(input) {
         const iChars = "!`@#$%^&*()+=[]\\';/{}|\"<>?~_"
         for (let i = 0; i < input.length; i++) {
@@ -84,6 +101,13 @@ export function ManageCoursePage({ courses, authors, loadAuthors, loadCourses, s
         setSaving(true);
 
         saveCourse(courseForForm).then(() => {
+            if (courseForForm.id !== null) {
+                // console.log('courseChange :>> ', courseChange);
+                // console.log('courseForForm :>> ', courseForForm);
+                saveCourseHistory(courseChange).catch(error => {
+                    alert("Course history is not saved " + error.message)
+                })
+            }
             toast.success("Course saved.")
             history.push("/courses");
         }).catch(error => {
@@ -93,7 +117,6 @@ export function ManageCoursePage({ courses, authors, loadAuthors, loadCourses, s
     }
 
     return (
-
         courses.length > 0 || authors.length > 0 || course.length > 0
             ? (
                 course.id === -1 ?
@@ -116,12 +139,15 @@ export function ManageCoursePage({ courses, authors, loadAuthors, loadCourses, s
 
 ManageCoursePage.propTypes = {
     course: PropTypes.object,
+    courseBackup: PropTypes.object,
     saveCourse: PropTypes.func.isRequired,
     loadCourses: PropTypes.func.isRequired,
     loadAuthors: PropTypes.func.isRequired,
+    loadCoursesHistory: PropTypes.func.isRequired,
+    saveCourseHistory: PropTypes.func.isRequired,
     courses: PropTypes.array.isRequired,
     authors: PropTypes.array.isRequired,
-    history: PropTypes.object.isRequired,
+    courseHistory: PropTypes.array.isRequired,
 }
 // function returnNull() {
 //     return null
@@ -144,13 +170,18 @@ function getCourseBySlug(courses, slug) {
 }
 
 function mapStateToProps(state, ownProps) {
+    let courseBackup
     const slug = ownProps.match.params.slug;
     const course = slug && state.courses.length > 0 ? getCourseBySlug(state.courses, slug) : newCourse
-
+    if (course.id !== -1 && course.id !== null) {
+        courseBackup = course
+    }
     return {
         course,
         courses: state.courses,
-        authors: state.authors
+        authors: state.authors,
+        courseHistory: state.history,
+        courseBackup
     }
 }
 
@@ -158,6 +189,8 @@ const mapDispatchToProps = {
     loadCourses,
     loadAuthors,
     saveCourse,
+    loadCoursesHistory,
+    saveCourseHistory
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(ManageCoursePage)
